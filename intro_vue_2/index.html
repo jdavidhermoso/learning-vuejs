@@ -2,26 +2,153 @@
 <html>
 
 <head>
-    <link rel="stylesheet" href="./style.css" />
+    <link rel="stylesheet" href="./style.css"/>
 </head>
 
 <body>
-    <div class="nav-bar"></div>
-    <div id="app">
-        <div class="product">
-            <div class="product-image">
-                <img :src="image" />
-            </div>
-            <div class="product-info">
-                <h1>{{ product }}</h1>
-                <a :href="link" target="_blank">More products like this</a>
-            </div>
-        </div>
-
+<div class="nav-bar"></div>
+<div id="app">
+    <div class="cart">
+        <p>
+            Cart({{ cart.length }})
+        </p>
     </div>
+    <product :premium="premium" @add-to-cart="addToCart" @remove-from-cart="removeFromCart"></product>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
-    <script src="main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
+<script>
+    Vue.component('product-review', {
+        template: `
+          <input v-model="name">`,
+        data() {
+            return {
+                name: null
+            }
+        }
+    });
+    Vue.component('product-details', {
+        props: {
+            details: {
+                type: Array,
+                required: true
+            }
+        },
+        template: `
+          <ul>
+          <li v-for="detail in details">
+            {{ detail }}
+          </li>
+          </ul>`
+    })
+    Vue.component('product', {
+        props: {
+            premium: {
+                type: Boolean,
+                required: true,
+            }
+        },
+        template: `
+          <div class="product">
+          <div class="product-image">
+            <img :src="image"/>
+          </div>
+          <div class="product-info">
+            <h1> {{ title }}</h1>
+            <p v-show="inStock">
+              In stock
+            </p>
+            <p>
+              Shipping {{ shipping }}
+            </p>
+            <p v-show="!inStock" :class="{outOfStock: !inStock}">
+              Out of stock
+            </p>
+
+            <product-details :details="details"></product-details>
+            <div v-for="(variant, index) in variants"
+                 :key="variant.variantId"
+                 class="color-box active"
+                 :style="{backgroundColor: variant.variantColor}"
+                 @mouseover="updateProduct(index)">
+            </div>
+            <button v-on:click="addToCart" :disabled="!inStock" :class="{disabledButton: !inStock}">
+              Add to cart
+            </button>
+            <button v-on:click="removeFromCart">
+              Remove from cart
+            </button>
+          </div>
+          <product-review></product-review>
+          </div>`,
+        data() {
+            return {
+                product: 'Socks',
+                brand: 'Vue Mastery',
+                selectedVariant: 0,
+                link: 'https://www.amazon.com/s/ref=nb_sb_noss?url=search-alias%3Daps&field-keywords=socks',
+                details: ['80% cotton', '20% polyester', 'Gender-neutral'],
+                variants: [
+                    {
+                        variantId: 2234,
+                        variantColor: 'green',
+                        variantImage: './vmSocks-green-onWhite.jpg',
+                        variantQuantity: 10
+                    },
+                    {
+                        variantId: 2235,
+                        variantColor: 'blue',
+                        variantImage: './vmSocks-blue-onWhite.jpg',
+                        variantQuantity: 20
+                    }
+                ],
+
+            }
+        },
+        methods: {
+            addToCart() {
+                this.$emit('add-to-cart', this.variants[this.selectedVariant].variantId);
+            },
+            removeFromCart() {
+                this.$emit('remove-from-cart', this.variants[this.selectedVariant].variantId);
+            },
+            updateProduct(variantIndex) {
+                this.selectedVariant = variantIndex;
+            }
+        },
+        computed: {
+            title() {
+                return `${this.brand} - ${this.product}`;
+            },
+            image() {
+                return this.variants[this.selectedVariant].variantImage;
+            },
+            inStock() {
+                return this.variants[this.selectedVariant].variantQuantity;
+            },
+            shipping() {
+                return this.premium ? 'Free' : '2.99';
+            }
+        }
+
+    });
+    var app = new Vue({
+        el: '#app',
+        data: {
+            premium: true,
+            cart: [],
+        },
+        methods: {
+            addToCart(productId) {
+                this.cart.push(productId);
+            },
+            removeFromCart(productId) {
+                this.cart = this.cart.filter((cartProductId) => cartProductId != productId);
+            },
+        }
+    })
+
+</script>
 </body>
 
 </html>
