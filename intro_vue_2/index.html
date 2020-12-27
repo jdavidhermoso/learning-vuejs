@@ -20,10 +20,83 @@
 <script>
     Vue.component('product-review', {
         template: `
-          <input v-model="name">`,
+          <form class="review-form" @submit.prevent="onSubmit">
+          <p v-if="errors.length">
+            <b> Please correct the errors: </b>
+          </p>
+          <ul>
+            <li v-for="error in errors"> {{ error }} </li>
+          </ul>
+          <p>
+            <label for="name">
+              Name:
+            </label>
+            <input id="name" v-model="name" required/>
+          </p>
+          <p>
+            <label for="review">
+              Review:
+            </label>
+            <textarea id="review" v-model="review" required>
+          </textarea>
+          </p>
+          <p>
+            <label for="rating">
+              Rating:
+            </label>
+            <select id="rating" v-model.number="rating" required>
+              <option>5</option>
+              <option>4</option>
+              <option>3</option>
+              <option>2</option>
+              <option>1</option>
+            </select>
+          </p>
+          <p>
+            <input type="submit" value="Submit!">
+          </p>
+          <p>
+            <label for="recommend">
+              Would you recommend this product?
+            </label>
+            <input type="radio" value="true" v-model="recommend">
+            <input type="radio" value="false" v-model="recommend">
+          </p>
+          </form>`,
         data() {
             return {
-                name: null
+                name: null,
+                review: null,
+                rating: null,
+                recommend: null,
+                errors:[]
+            }
+        },
+        methods: {
+            onSubmit() {
+                if (this.name && this.review && this.rating) {
+                    let productReview = {
+                        name: this.name,
+                        rating: this.rating,
+                        review: this.review,
+                        recommend: this.recommend,
+                        errors: null
+                    }
+                    this.$emit('review-submitted', productReview);
+                    this.name = null;
+                    this.rating = null;
+                    this.review = null;
+                } else {
+                    if (!this.name) {
+                        this.errors.push("Name required")
+                    }
+                    if (!this.rating) {
+                        this.errors.push("Rating required")
+                    }
+                    if (!this.review) {
+                        this.errors.push("Review required")
+                    }
+                }
             }
         }
     });
@@ -79,7 +152,31 @@
               Remove from cart
             </button>
           </div>
-          <product-review></product-review>
+          <div>
+            <h2>
+              Reviews
+            </h2>
+            <p v-if="!reviews.length">
+              There are no reviews yet.
+            </p>
+            <ul>
+              <li v-for="review in reviews">
+                <p>
+                  Name: {{ review.name }}
+                </p>
+                <p>
+                  Review: {{ review.review }}
+                </p>
+                <p>
+                  Rating: {{ review.rating }}
+                </p>
+                <p>
+                  Recommend: {{ review.recommend }}
+                </p>
+              </li>
+            </ul>
+          </div>
+          <product-review @review-submitted="addReview"></product-review>
           </div>`,
         data() {
             return {
@@ -102,7 +199,7 @@
                         variantQuantity: 20
                     }
                 ],
-
+                reviews: []
             }
         },
         methods: {
@@ -114,6 +211,10 @@
             },
             updateProduct(variantIndex) {
                 this.selectedVariant = variantIndex;
+            },
+            addReview(productReview) {
+                console.log(productReview)
+                this.reviews.push(productReview)
             }
         },
         computed: {
@@ -143,7 +244,7 @@
                 this.cart.push(productId);
             },
             removeFromCart(productId) {
-                this.cart = this.cart.filter((cartProductId) => cartProductId != productId);
+                this.cart = this.cart.filter((cartProductId) => cartProductId !== productId);
             },
         }
     })
