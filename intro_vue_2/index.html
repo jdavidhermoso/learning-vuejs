@@ -18,6 +18,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/vue@2.5.13/dist/vue.js"></script>
 <script>
+    var eventBus = new Vue();
+
     Vue.component('product-review', {
         template: `
           <form class="review-form" @submit.prevent="onSubmit">
@@ -69,7 +71,7 @@
                 review: null,
                 rating: null,
                 recommend: null,
-                errors:[]
+                errors: []
             }
         },
         methods: {
@@ -82,7 +84,7 @@
                         recommend: this.recommend,
                         errors: null
                     }
-                    this.$emit('review-submitted', productReview);
+                    eventBus.$emit('review-submitted', productReview);
                     this.name = null;
                     this.rating = null;
                     this.review = null;
@@ -113,7 +115,7 @@
             {{ detail }}
           </li>
           </ul>`
-    })
+    });
     Vue.component('product', {
         props: {
             premium: {
@@ -156,27 +158,8 @@
             <h2>
               Reviews
             </h2>
-            <p v-if="!reviews.length">
-              There are no reviews yet.
-            </p>
-            <ul>
-              <li v-for="review in reviews">
-                <p>
-                  Name: {{ review.name }}
-                </p>
-                <p>
-                  Review: {{ review.review }}
-                </p>
-                <p>
-                  Rating: {{ review.rating }}
-                </p>
-                <p>
-                  Recommend: {{ review.recommend }}
-                </p>
-              </li>
-            </ul>
+            <product-tabs :reviews="reviews"></product-tabs>
           </div>
-          <product-review @review-submitted="addReview"></product-review>
           </div>`,
         data() {
             return {
@@ -211,10 +194,6 @@
             },
             updateProduct(variantIndex) {
                 this.selectedVariant = variantIndex;
-            },
-            addReview(productReview) {
-                console.log(productReview)
-                this.reviews.push(productReview)
             }
         },
         computed: {
@@ -230,8 +209,58 @@
             shipping() {
                 return this.premium ? 'Free' : '2.99';
             }
+        },
+        mounted() {
+            eventBus.$on('review-submitted', productReview => {
+                this.reviews.push(productReview)
+            })
         }
-
+    });
+    Vue.component('product-tabs', {
+        props: {
+            reviews: {
+                type: Array,
+                required: true
+            }
+        },
+        template: `
+          <div>
+          <span class="tab"
+                :class="{activeTab: selectedTab === tab}"
+                v-for="(tab, index) in tabs"
+                :key="index"
+                @click="selectedTab = tab">
+                    {{ tab }}
+          </span>
+          <div v-show="selectedTab === 'Reviews'">
+            <p v-if="!reviews.length">
+              There are no reviews yet.
+            </p>
+            <ul>
+              <li v-for="review in reviews">
+                <p>
+                  Name: {{ review.name }}
+                </p>
+                <p>
+                  Review: {{ review.review }}
+                </p>
+                <p>
+                  Rating: {{ review.rating }}
+                </p>
+                <p>
+                  Recommend: {{ review.recommend }}
+                </p>
+              </li>
+            </ul>
+          </div>
+          <product-review v-show="selectedTab === 'Make a review'"></product-review>
+          </div>`,
+        data() {
+            return {
+                tabs: ['Reviews', 'Make a review'],
+                selectedTab: 'Reviews'
+            }
+        }
     });
     var app = new Vue({
         el: '#app',
